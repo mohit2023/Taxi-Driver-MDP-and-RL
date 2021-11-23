@@ -1,4 +1,5 @@
 import random
+import copy # TODO: check if allowed
 
 # list = [a,b] => list[0]=a=x-cordinate, list[1]=b=y-coordinate
 
@@ -57,12 +58,12 @@ class Grid:
 
   def updatePick(self, location):
     self.check(location)
-    if self.grid[location].depot == True:
+    if self.grid[tuple(location)].depot == True:
       self.pick = location
   
   def updateDrop(self, location):
     self.check(location)
-    if self.grid[location].depot == True:
+    if self.grid[tuple(location)].depot == True:
       self.drop = location
 
   def __relativeDirection(self, p1, p2):
@@ -104,11 +105,76 @@ class MDP:
 
   actionList = ['North', 'South', 'East', 'West', 'Pickup', 'Drop']
   directions = ['North', 'South', 'East', 'West']
+  
 
   def __init__(self, layout, taxi):
     layout.check(taxi.location)
     self.env = layout
     self.state = taxi
+
+    self.all_states = [(x,y,status,a,b) for x in range(self.env.n) for y in range(self.env.m) for status in [False, True] for a in range(self.env.n) for b in range(self.env.m) if status!=True or (a==x and b==y)]
+
+    self.transition = {}
+    self.reward = {}
+
+    for state in self.all_states:
+      dict_state_t = {}
+      dict_state_r = {}
+      for action in self.actionList:
+        dict_action_t = {}
+        dict_action_r = {}
+        if action == 'Pickup':
+          if state[3]==state[0] and state[4]==state[1]:
+            dict_action_t[(state[0],state[1],True,state[3],state[4])] = 1.0
+            dict_action_r[(state[0],state[1],True,state[3],state[4])] = -1
+          else:
+            dict_action_t[state] = 1.0
+            dict_action_r[state] = -10
+        elif action == 'Drop':
+          if state[2]==True:
+            dict_action_t[(state[0],state[1],False,state[3],state[4])] = 1.0
+            if [state[0],state[1]] == self.env.drop:
+              dict_action_r[(state[0],state[1],False,state[3],state[4])] = 20
+            else:
+              dict_action_r[(state[0],state[1],False,state[3],state[4])] = -1
+          else:
+            dict_action_t[state] = 1.0
+            if state[3]==state[0] and state[4]==state[1]:
+              dict_action_r[state] = -1
+            else:
+              dict_action_r[state] = -10
+        else:
+          for dir in self.directions:
+            if self.env.grid[(state[0],state[1])].walls[dir] == True:
+              result = state
+            else:
+              location = [state[0],state[1]]
+              if dir == 'North':
+                location[1] = location[1]+1
+              elif dir == 'South':
+                location[1] = location[1]-1
+              elif dir == 'East':
+                location[0] = location[0]+1
+              elif dir == 'West':
+                location[0] = location[0]-1
+
+              if state[2]==True:
+                result = (location[0],location[1],True,location[0],location[1])
+              else:
+                result = (location[0],location[1],False,state[3],state[4])
+
+            if dir == action:
+              dict_action_t[result] = 0.85
+            else:
+              dict_action_t[result] = 0.15/3
+            dict_action_r[result] = -1
+
+        dict_state_t[action] = dict_action_t
+        dict_state_r[action] = dict_action_r
+
+      self.transition[state] = dict_state_t
+      self.reward[state] = dict_state_r
+    
 
   def applyAction(self, action):
     if action not in self.actionList:
@@ -153,11 +219,17 @@ class MDP:
         return 20
       else:
         return -1
+  
+  def updateState(self, loc, status):
+    self.state.location = loc
+    self.state.active = status
+
 
   def __str__(self):
     return str(self.__class__) + ": " + str(self.__dict__)
     
   
+
 def problem_layout():
   grid = Grid(5,5)
   depots = [(0,4),(4,4),(0,0),(3,0)]
@@ -173,15 +245,13 @@ def problem_layout():
   grid.addWalls(walls)
   return grid
 
-def partA():
-  grid = problem_layout()
+def instance(grid):
   posDepots = grid.depots
-  print(posDepots)
   startDepo = random.choice(posDepots)
   posDepots = [d for d in posDepots if d != startDepo]
   endDepo = random.choice(posDepots)
-  grid.updatePick(startDepo)
-  grid.updateDrop(endDepo)
+  grid.updatePick(list(startDepo))
+  grid.updateDrop(list(endDepo))
 
   x = random.randint(0,grid.n-1)
   y= random.randint(0,grid.m-1)
@@ -189,11 +259,84 @@ def partA():
 
   simulator = MDP(grid,taxi)
 
-  # test run
-  print(simulator.state)
-  act = random.choice(simulator.actionList)
-  print(act)
-  simulator.applyAction(act)
-  print(simulator.state)
+  return simulator
+
+
+def normDistance(cvfn, pvfn, all_states):
+  normd = 0
+  for state in all_states:
+    normd = max(normd, abs(cvfn[state]-pvfn[state])) 
+  return normd
+
+def value_iteration(simulator, epsilon, gamma):
+  pvfn = {}
+  cvfn = {}
+  all_states = simulator.all_states
+  actionList = simulator.actionList
+  for state in all_states:
+    pvfn[state] = 0
+
+  norm_distance = []
+  
+  while(True):
+    for state in all_states:
+      cvfn[state] = max([sum([simulator.transition[state][action][result]*(simulator.reward[state][action][result] + (gamma*pvfn[result])) for result in simulator.transition[state][action]]) for action in actionList])
+
+    normd = normDistance(cvfn, pvfn, all_states)
+    norm_distance.append(normd)
+
+    if normd <= epsilon:
+      break
+    pvfn = copy.deepcopy(cvfn)
+  
+  return norm_distance,cvfn
+
+def policy_valueIteration(simulator, epsilon, gamma):
+  norm_distance,valuefn = value_iteration(simulator, epsilon, gamma)
+  policy = {}
+  for state in simulator.all_states:
+    mxv = float('-inf')
+    for action in simulator.actionList:
+      val = sum([simulator.transition[state][action][result]*(simulator.reward[state][action][result] + gamma*valuefn[result]) for result in simulator.transition[state][action]])
+      if val>mxv:
+        res = action
+    policy[state] = res
+  
+  return policy,norm_distance
+
+def partA2a(simulator, epsilon):
+  gamma = 0.9
+  # epsilon = 0.1
+  policy,norm_distance = policy_valueIteration(simulator, epsilon, gamma)
+
+  print("partA - 2 - a")
+  print(policy)
+  print("choosen epsilon: ", epsilon, " Number of iteration: ", len(norm_distance))
+
+
+def partA2b(simulator, epsilon):
+  # epsilon = 0.1
+  discount = [0.01, 0.1, 0.5, 0.8, 0.99]
+
+  print("partA2b: ")
+  for gamma in discount:
+    norm_distance,valuefn = value_iteration(simulator, epsilon, gamma)
+    print(gamma, len(norm_distance))
+    # TODO : plot graphs
+
+
+
+def partA():
+  grid = problem_layout()
+  simulator = instance(grid)
+  
+  epsilon = 0.1
+  # partA -> 2 -> a
+  partA2a(simulator, epsilon)
+
+  # partA -> 2 -> b
+  partA2b(simulator, epsilon)
+
+
 
 partA()
