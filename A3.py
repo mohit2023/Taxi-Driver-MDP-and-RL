@@ -1,5 +1,6 @@
 import random
 import copy # TODO: check if allowed
+import numpy as np
 
 # list = [a,b] => list[0]=a=x-cordinate, list[1]=b=y-coordinate
 
@@ -419,11 +420,45 @@ def policyEvaluation_iterate(simulator, policy, epsilon, gamma):
   return cvfn
   
 
+def policyEvaluation_algebra(simulator, policy, gamma):
+  stateNum = {}
+  i = 0
+  for state in simulator.all_states:
+    stateNum[state]=i
+    i+=1
+
+  lhs = []
+  rhs = []
+
+  n = len(simulator.all_states)
+  for state in simulator.all_states:
+    eqn = [0]*n
+    val = 0.0
+    eqn[stateNum[state]] = 1.0
+    if state != simulator.goal_state:
+      action = policy[state]
+      for result in simulator.transition[state][action]:
+        val+= simulator.transition[state][action][result]*simulator.reward[state][action][result]
+        eqn[stateNum[result]] += -gamma*simulator.transition[state][action][result]
+    lhs.append(eqn)
+    rhs.append(val)
+  
+  lhs = np.array(lhs)
+  rhs = np.array(rhs)
+  res = np.linalg.solve(lhs,rhs)
+
+  valuefn = {}
+  for state in simulator.all_states:
+    valuefn[state] = res[stateNum[state]]
+
+  return valuefn
+
+
 def policyEvaluation(simulator, policy, epsilon, method, gamma):
   if method == 1:
     return policyEvaluation_iterate(simulator, policy, epsilon, gamma)
   else:
-    return policyEvaluation_algebra(simulator, policy, epsilon, gamma)
+    return policyEvaluation_algebra(simulator, policy, gamma)
 
 
 def policyImprovement(simulator, gamma, valuefn):
@@ -445,7 +480,7 @@ def policy_policyIteration(simulator, epsilon, gamma, convergedPolicy={}, method
     valuefn = policyEvaluation(simulator, policy, epsilon, method, gamma)
     newPolicy = policyImprovement(simulator, gamma, valuefn)
     converged = True
-
+    
     if convergedPolicy!={}:
       loss = 0
       for state in simulator.all_states:
@@ -465,7 +500,10 @@ def policy_policyIteration(simulator, epsilon, gamma, convergedPolicy={}, method
 
 def partA3b(simulator, epsilon):
   print("partA - 3 - b: ")
-  policy,policyLoss = policy_policyIteration(simulator, epsilon, 0.1)
+
+  # TODO: to check if initial policy should be same for policy for the two runs of initially finding policy and then for calculating policy loss
+
+  policy,policyLoss = policy_policyIteration(simulator, epsilon, 0.1) # give parameter method=2, for using policy evaluation by solving linear systems
 
   temp,policyLoss = policy_policyIteration(simulator, epsilon, 0.1, policy)
   print(policyLoss)
@@ -485,13 +523,13 @@ def partA():
   
   epsilon = 0.01
   # partA -> 2 -> a
-  # partA2a(simulator, epsilon)
+  partA2a(simulator, epsilon)
 
   # partA -> 2 -> b
-  # partA2b(simulator, epsilon)
+  partA2b(simulator, epsilon)
 
   # partA -> 2 -> c
-  # partA2c(simulator, epsilon)
+  partA2c(simulator, epsilon)
 
   # partA -> 3 -> b
   partA3b(simulator, epsilon)
