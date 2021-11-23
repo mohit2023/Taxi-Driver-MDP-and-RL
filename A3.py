@@ -300,8 +300,8 @@ def value_iteration(simulator, epsilon, gamma):
   
   return norm_distance,cvfn
 
-def policy_valueIteration(simulator, epsilon, gamma):
-  norm_distance,valuefn = value_iteration(simulator, epsilon, gamma)
+
+def policy_Given_Valuefn(simulator, gamma, valuefn):
   policy = {}
   goal_state = simulator.goal_state
   policy[goal_state] = 'Episode ended'
@@ -315,8 +315,16 @@ def policy_valueIteration(simulator, epsilon, gamma):
         mxv = val
         res = action
     policy[state] = res
+
+  return policy
+
+
+def policy_valueIteration(simulator, epsilon, gamma):
+  norm_distance,valuefn = value_iteration(simulator, epsilon, gamma)
+  policy = policy_Given_Valuefn(simulator, gamma, valuefn)
   
   return policy,norm_distance
+
 
 def partA2a(simulator, epsilon):
   gamma = 0.9
@@ -387,6 +395,89 @@ def partA2c(simulator, epsilon):
     simulate(simulator, policy_99)
 
 
+def policyEvaluation_iterate(simulator, policy, epsilon, gamma):
+  pvfn = {}
+  cvfn = {}
+  all_states = simulator.all_states
+  for state in all_states:
+    pvfn[state] = 0
+
+  goal_state = simulator.goal_state
+  while(True):
+    cvfn[goal_state] = 0
+    for state in all_states:
+      if(state == goal_state):
+        continue
+      action = policy[state]
+      cvfn[state] = sum([simulator.transition[state][action][result]*(simulator.reward[state][action][result] + (gamma*pvfn[result])) for result in simulator.transition[state][action]])
+
+    normd = normDistance(cvfn, pvfn, all_states)
+    if normd <= epsilon:
+      break
+    pvfn = copy.deepcopy(cvfn)
+  
+  return cvfn
+  
+
+def policyEvaluation(simulator, policy, epsilon, method, gamma):
+  if method == 1:
+    return policyEvaluation_iterate(simulator, policy, epsilon, gamma)
+  else:
+    return policyEvaluation_algebra(simulator, policy, epsilon, gamma)
+
+
+def policyImprovement(simulator, gamma, valuefn):
+  return policy_Given_Valuefn(simulator, gamma, valuefn)
+
+
+def policy_policyIteration(simulator, epsilon, gamma, convergedPolicy={}, method=1):
+  # make random policy
+  policy = {}
+  policy[simulator.goal_state] = 'Episode ended'
+  for state in simulator.all_states:
+    if state == simulator.goal_state:
+      continue
+    policy[state] = random.choice(simulator.actionList)
+
+  policyLoss = []
+  
+  while(True):
+    valuefn = policyEvaluation(simulator, policy, epsilon, method, gamma)
+    newPolicy = policyImprovement(simulator, gamma, valuefn)
+    converged = True
+
+    if convergedPolicy!={}:
+      loss = 0
+      for state in simulator.all_states:
+        if convergedPolicy[state]!=policy[state]:
+          loss+=1
+      policyLoss.append(loss)
+
+    for state in simulator.all_states:
+      if newPolicy[state] != policy[state]:
+        converged = False
+    if converged:
+      break
+    policy = copy.deepcopy(newPolicy)
+
+  return policy,policyLoss
+
+
+def partA3b(simulator, epsilon):
+  print("partA - 3 - b: ")
+  policy,policyLoss = policy_policyIteration(simulator, epsilon, 0.1)
+
+  temp,policyLoss = policy_policyIteration(simulator, epsilon, 0.1, policy)
+  print(policyLoss)
+
+  discount = [0.01, 0.1, 0.5, 0.8, 0.99]
+  for gamma in discount:
+    policy,policyLoss = policy_policyIteration(simulator, epsilon, gamma)
+    temp,policyLoss = policy_policyIteration(simulator, epsilon, gamma, policy)
+    print(gamma, policyLoss)
+    # TODO: plot graphs
+    
+
 
 def partA():
   grid = problem_layout()
@@ -394,13 +485,16 @@ def partA():
   
   epsilon = 0.01
   # partA -> 2 -> a
-  partA2a(simulator, epsilon)
+  # partA2a(simulator, epsilon)
 
   # partA -> 2 -> b
-  partA2b(simulator, epsilon)
+  # partA2b(simulator, epsilon)
 
   # partA -> 2 -> c
-  partA2c(simulator, epsilon)
+  # partA2c(simulator, epsilon)
+
+  # partA -> 3 -> b
+  partA3b(simulator, epsilon)
 
 
 
