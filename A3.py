@@ -111,13 +111,16 @@ class MDP:
     layout.check(taxi.location)
     self.env = layout
     self.state = taxi
-
+    goal = self.env.drop
+    self.goal_state = (goal[0],goal[1],False,goal[0],goal[1])
     self.all_states = [(x,y,status,a,b) for x in range(self.env.n) for y in range(self.env.m) for status in [False, True] for a in range(self.env.n) for b in range(self.env.m) if status!=True or (a==x and b==y)]
 
     self.transition = {}
     self.reward = {}
 
     for state in self.all_states:
+      if(state == self.goal_state):
+        continue
       dict_state_t = {}
       dict_state_r = {}
       for action in self.actionList:
@@ -201,7 +204,7 @@ class MDP:
     if self.env.grid[tuple(self.state.location)].walls[dir] == False:
       self.state.move(dir)
       if self.state.active:
-        self.env.updatePick(self.state.location)
+        self.updatePassenger(self.state.location)
 
   def pickup(self):
     if self.env.pick != self.state.location:
@@ -223,6 +226,9 @@ class MDP:
   def updateState(self, loc, status):
     self.state.location = loc
     self.state.active = status
+
+  def updatePassenger(self, location):
+    self.env.pick = location
 
 
   def __str__(self):
@@ -277,9 +283,12 @@ def value_iteration(simulator, epsilon, gamma):
     pvfn[state] = 0
 
   norm_distance = []
-  
+  goal_state = simulator.goal_state
   while(True):
+    cvfn[goal_state] = 0
     for state in all_states:
+      if(state == goal_state):
+        continue
       cvfn[state] = max([sum([simulator.transition[state][action][result]*(simulator.reward[state][action][result] + (gamma*pvfn[result])) for result in simulator.transition[state][action]]) for action in actionList])
 
     normd = normDistance(cvfn, pvfn, all_states)
@@ -294,11 +303,16 @@ def value_iteration(simulator, epsilon, gamma):
 def policy_valueIteration(simulator, epsilon, gamma):
   norm_distance,valuefn = value_iteration(simulator, epsilon, gamma)
   policy = {}
+  goal_state = simulator.goal_state
+  policy[goal_state] = 'Episode ended'
   for state in simulator.all_states:
+    if(state == goal_state):
+      continue
     mxv = float('-inf')
     for action in simulator.actionList:
       val = sum([simulator.transition[state][action][result]*(simulator.reward[state][action][result] + gamma*valuefn[result]) for result in simulator.transition[state][action]])
       if val>mxv:
+        mxv = val
         res = action
     policy[state] = res
   
@@ -306,23 +320,71 @@ def policy_valueIteration(simulator, epsilon, gamma):
 
 def partA2a(simulator, epsilon):
   gamma = 0.9
-  # epsilon = 0.1
   policy,norm_distance = policy_valueIteration(simulator, epsilon, gamma)
 
-  print("partA - 2 - a")
+  print("partA - 2 - a: ")
   print(policy)
   print("choosen epsilon: ", epsilon, " Number of iteration: ", len(norm_distance))
 
 
 def partA2b(simulator, epsilon):
-  # epsilon = 0.1
   discount = [0.01, 0.1, 0.5, 0.8, 0.99]
 
-  print("partA2b: ")
+  print("partA - 2 - b: ")
   for gamma in discount:
     norm_distance,valuefn = value_iteration(simulator, epsilon, gamma)
     print(gamma, len(norm_distance))
     # TODO : plot graphs
+
+
+def simulate(simulator, policy, steps=20):
+  for i in range(steps):
+    t = simulator.state.location
+    p = simulator.env.pick
+    a = simulator.state.active
+    current_state = (t[0],t[1],a,p[0],p[1])
+    actionTotake = policy[current_state]
+    print("state: ", current_state, " action prescribed: ", actionTotake)
+    if(current_state == simulator.goal_state):
+      break
+    simulator.applyAction(actionTotake)
+
+
+def partA2c(simulator, epsilon):
+  print("partA - 2 - c: ")
+
+  taxiLocation = simulator.state.location
+  passengerLocation = simulator.env.pick
+  destLocation = simulator.env.drop
+  depots = simulator.env.depots
+  depots = [list(depo) for depo in depots if list(depo)!=destLocation]
+
+  policy_10,norm_distance_10 = policy_valueIteration(simulator, epsilon, 0.1)
+  policy_99,norm_distance_99 = policy_valueIteration(simulator, epsilon, 0.99)
+
+  print("\n Discount factor 0.1, Taxi at: ", taxiLocation, "Passenger at: ", passengerLocation)
+  simulate(simulator, policy_10)
+
+  simulator.updateState(taxiLocation, False)
+  simulator.env.updatePick(passengerLocation)
+  print("\n Discount factor 0.99, Taxi at: ", taxiLocation, "Passenger at: ", passengerLocation)
+  simulate(simulator, policy_99)
+
+  # Run by varying taxi location and passenger location, (run num times)
+  num = 5
+  for i in range(num):
+    newTaxiLocation = [random.randint(0,simulator.env.n-1),random.randint(0,simulator.env.m-1)]
+    newPassengerLocation = random.choice(depots)
+
+    simulator.updateState(newTaxiLocation, False)
+    simulator.env.updatePick(newPassengerLocation)
+    print("\n Discount factor 0.1, Taxi at: ", newTaxiLocation, "Passenger at: ", newPassengerLocation)
+    simulate(simulator, policy_10)
+
+    simulator.updateState(taxiLocation, False)
+    simulator.env.updatePick(passengerLocation)
+    print("\n Discount factor 0.99, Taxi at: ", newTaxiLocation, "Passenger at: ", newPassengerLocation)
+    simulate(simulator, policy_99)
 
 
 
@@ -330,12 +392,15 @@ def partA():
   grid = problem_layout()
   simulator = instance(grid)
   
-  epsilon = 0.1
+  epsilon = 0.01
   # partA -> 2 -> a
   partA2a(simulator, epsilon)
 
   # partA -> 2 -> b
   partA2b(simulator, epsilon)
+
+  # partA -> 2 -> c
+  partA2c(simulator, epsilon)
 
 
 
