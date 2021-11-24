@@ -231,6 +231,16 @@ class MDP:
   def updatePassenger(self, location):
     self.env.pick = location
 
+  def getState(self):
+    return (self.state.location[0],self.state.location[1],self.state.active,self.env.pick[0],self.env.pick[1])
+
+  def reset(self):
+    depots = [depo for depo in self.env.depots if depo!=self.env.drop]
+    pick = list(random.choice(depots))
+    taxi  = [random.randint(0,self.env.n-1),random.randint(0,self.env.m-1)]
+    self.updatePassenger(pick)
+    self.updateState(taxi, False)
+
 
   def __str__(self):
     return str(self.__class__) + ": " + str(self.__dict__)
@@ -535,5 +545,166 @@ def partA():
   partA3b(simulator, epsilon)
 
 
+def selectAction(simulator, PRexp, Qval, state):
+  if state==simulator.goal_state:
+    return 'Episode end'
+  exp = random.random()
+  if exp<PRexp: # explore
+    res = random.choice(simulator.actionList)
+  else: # act according to optimal policy
+    mxv = float('-inf')
+    for action in simulator.actionList:
+      if mxv<Qval[state][action]:
+        mxv = Qval[state][action]
+        res = action
+  return res
+
+
+def initialize_Qval(simulator):
+  Qval = {}
+  for state in simulator.all_states:
+    Qval[state] = {}
+    if state==simulator.goal_state:
+      Qval[state]['Episode end'] = 0.0
+    else:
+      for action in simulator.actionList:
+        Qval[state][action] = 0.0
+  return Qval
+
+
+def policy_Given_Qval(simulator, Qval):
+  policy = {}
+  for state in simulator.all_states:
+    mxv = float('-inf')
+    for action in Qval[state]:
+      if mxv<Qval[state][action]:
+        mxv = Qval[state][action]
+        res = action
+    policy[state] = res
+  return policy
+
+
+def evaluatePolicy(simulator, Qval, gamma, steps, analysis):
+  policy = policy_Given_Qval(simulator, Qval)
+  average_reward = 0
+  for i in range(analysis):
+    simulator.reset()
+    reward = 0
+    while simulator.getState()!=simulator.goal_state and steps>0:
+      reward = simulator.applyAction(policy[simulator.getState()]) + gamma*reward
+      steps-=1
+    average_reward+=reward
+  average_reward /= analysis
+  return average_reward
+
+def Qlearning(simulator, alpha, gamma, epsilon=0.1, episodes=2000, steps=500, analysis=10):
+  Qval=initialize_Qval(simulator)
+  average_utility = []
+  for episode in range(episodes):
+    simulator.reset()
+    state = simulator.getState()
+    iterations=steps
+    while state!=simulator.goal_state and iterations>0:
+      res = selectAction(simulator, epsilon, Qval, state)
+      reward = simulator.applyAction(res)
+      resultant_state = simulator.getState()
+      sample = reward + gamma*max([Qval[resultant_state][action] for action in Qval[resultant_state]])
+      Qval[state][res] = (1-alpha)*Qval[state][res] + alpha*sample
+      state = resultant_state
+      iterations-=1
+    if analysis!=0:
+      average_utility.append(evaluatePolicy(simulator, Qval, gamma, steps, analysis))
+  return policy_Given_Qval(simulator, Qval),average_utility
+
+def Qlearning_decay(simulator, alpha, gamma, epsilon=0.1, episodes=2000, steps=500, analysis=10):
+  Qval=initialize_Qval(simulator)
+  average_utility = []
+  learn = 1
+  for episode in range(episodes):
+    simulator.reset()
+    state = simulator.getState()
+    iterations=steps
+    while state!=simulator.goal_state and iterations>0:
+      res = selectAction(simulator, epsilon/learn, Qval, state)
+      reward = simulator.applyAction(res)
+      resultant_state = simulator.getState()
+      sample = reward + gamma*max([Qval[resultant_state][action] for action in Qval[resultant_state]])
+      Qval[state][res] = (1-alpha)*Qval[state][res] + alpha*sample
+      state = resultant_state
+      iterations-=1
+      learn+=1
+    if analysis!=0:
+      average_utility.append(evaluatePolicy(simulator, Qval, gamma, steps, analysis))
+  return policy_Given_Qval(simulator, Qval),average_utility
+
+def sarsa(simulator, alpha, gamma, epsilon=0.1, episodes=2000, steps=500, analysis=10):
+  Qval=initialize_Qval(simulator)
+  average_utility = []
+  for episode in range(episodes):
+    simulator.reset()
+    state = simulator.getState()
+    action = selectAction(simulator, epsilon, Qval, state)
+    iterations=steps
+    while state!=simulator.goal_state and iterations>0:
+      reward = simulator.applyAction(action)
+      resultant_state = simulator.getState()
+      resultant_state_action = selectAction(simulator, epsilon, Qval, resultant_state)
+      sample = reward + gamma*Qval[resultant_state][resultant_state_action]
+      Qval[state][action] = (1-alpha)*Qval[state][action] + alpha*sample
+      state = resultant_state
+      action = resultant_state_action
+      iterations-=1
+    if analysis!=0:
+      average_utility.append(evaluatePolicy(simulator, Qval, gamma, steps, analysis))
+  return policy_Given_Qval(simulator, Qval),average_utility
+
+def sarsa_decay(simulator, alpha, gamma, epsilon=0.1, episodes=2000, steps=500, analysis=10):
+  Qval = initialize_Qval(simulator)
+  average_utility = []
+  learn = 1
+  for episode in range(episodes):
+    simulator.reset()
+    state = simulator.getState()
+    action = selectAction(simulator, epsilon/learn, Qval, state)
+    iterations=steps
+    while state!=simulator.goal_state and iterations>0:
+      reward = simulator.applyAction(action)
+      resultant_state = simulator.getState()
+      resultant_state_action = selectAction(simulator, epsilon/learn, Qval, resultant_state)
+      sample = reward + gamma*Qval[resultant_state][resultant_state_action]
+      Qval[state][action] = (1-alpha)*Qval[state][action] + alpha*sample
+      state = resultant_state
+      action = resultant_state_action
+      iterations-=1
+      learn+=1
+    if analysis!=0:
+      average_utility.append(evaluatePolicy(simulator, Qval, gamma, steps, analysis))
+  return policy_Given_Qval(simulator, Qval),average_utility
+
+
+def partB2(simulator):
+  gamma = 0.99
+  alpha = 0.85
+
+  policy1,average_utility_Qlearning = Qlearning(simulator, alpha, gamma)
+  policy2,average_utility_Qlearning_decay = Qlearning_decay(simulator, alpha, gamma)
+  policy3,average_utility_sarsa = sarsa(simulator, alpha, gamma)
+  policy4,average_utility_sarsa_decay = sarsa_decay(simulator, alpha, gamma)
+
+  print("partB -> 2")
+  print("Qlearning: ", average_utility_Qlearning[len(average_utility_Qlearning)-1])
+  print("Qlearning_decay: ", average_utility_Qlearning_decay[len(average_utility_Qlearning_decay)-1])
+  print("sarsa: ", average_utility_sarsa[len(average_utility_sarsa)-1])
+  print("sarsa_decay: ", average_utility_sarsa_decay[len(average_utility_sarsa_decay)-1])
+
+
+def partB():
+  grid = problem_layout()
+  simulator = instance(grid)
+
+  # partB -> 2
+  partB2(simulator)
 
 partA()
+
+partB()
