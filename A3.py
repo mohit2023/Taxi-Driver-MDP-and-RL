@@ -278,6 +278,44 @@ def problem_layout():
   grid.addWalls(walls)
   return grid
 
+def problem_layout_partB5():
+  grid = Grid(10,10)
+  depots = [(0,1),(0,9),(3,6),(4,0),(5,9),(6,5),(8,9),(9,0)]
+  grid.addDepots(depots)
+  walls = [
+    [(0,0),(1,0)],
+    [(0,1),(1,1)],
+    [(0,2),(1,2)],
+    [(0,3),(1,3)],
+
+    [(3,0),(4,0)],
+    [(3,1),(4,1)],
+    [(3,2),(4,2)],
+    [(3,3),(4,3)],
+
+    [(7,0),(8,0)],
+    [(7,1),(8,1)],
+    [(7,2),(8,2)],
+    [(7,3),(8,3)],
+
+    [(2,6),(3,6)],
+    [(2,7),(3,7)],
+    [(2,8),(3,8)],
+    [(2,9),(3,9)],
+
+    [(7,6),(8,6)],
+    [(7,7),(8,7)],
+    [(7,8),(8,8)],
+    [(7,9),(8,9)],
+
+    [(5,4),(6,4)],
+    [(5,5),(6,5)],
+    [(5,6),(6,6)],
+    [(5,7),(6,7)],
+  ]
+  grid.addWalls(walls)
+  return grid
+
 def instance(grid):
   posDepots = grid.depots
   startDepo = random.choice(posDepots)
@@ -614,8 +652,7 @@ def policy_Given_Qval(simulator, Qval):
     policy[state] = res
   return policy
 
-def evaluatePolicy(simulator, Qval, gamma, steps, analysis):
-  policy = policy_Given_Qval(simulator, Qval)
+def evaluatePolicy(simulator, policy, gamma, steps, analysis):
   average_reward = 0
   for i in range(analysis):
     simulator.reset(True)
@@ -645,7 +682,7 @@ def Qlearning(simulator, alpha, gamma, epsilon=0.1, episodes=2000, steps=500, an
       state = resultant_state
       iterations-=1
     if analysis!=0:
-      average_utility.append(evaluatePolicy(simulator, Qval, gamma, steps, analysis))
+      average_utility.append(evaluatePolicy(simulator, policy_Given_Qval(simulator, Qval), gamma, steps, analysis))
   return policy_Given_Qval(simulator, Qval),average_utility
 
 def Qlearning_decay(simulator, alpha, gamma, epsilon=0.1, episodes=2000, steps=500, analysis=10):
@@ -666,7 +703,7 @@ def Qlearning_decay(simulator, alpha, gamma, epsilon=0.1, episodes=2000, steps=5
       iterations-=1
       learn+=1
     if analysis!=0:
-      average_utility.append(evaluatePolicy(simulator, Qval, gamma, steps, analysis))
+      average_utility.append(evaluatePolicy(simulator, policy_Given_Qval(simulator, Qval), gamma, steps, analysis))
   return policy_Given_Qval(simulator, Qval),average_utility
 
 def sarsa(simulator, alpha, gamma, epsilon=0.1, episodes=2000, steps=500, analysis=10):
@@ -687,7 +724,7 @@ def sarsa(simulator, alpha, gamma, epsilon=0.1, episodes=2000, steps=500, analys
       action = resultant_state_action
       iterations-=1
     if analysis!=0:
-      average_utility.append(evaluatePolicy(simulator, Qval, gamma, steps, analysis))
+      average_utility.append(evaluatePolicy(simulator, policy_Given_Qval(simulator, Qval), gamma, steps, analysis))
   return policy_Given_Qval(simulator, Qval),average_utility
 
 def sarsa_decay(simulator, alpha, gamma, epsilon=0.1, episodes=2000, steps=500, analysis=10):
@@ -710,7 +747,7 @@ def sarsa_decay(simulator, alpha, gamma, epsilon=0.1, episodes=2000, steps=500, 
       iterations-=1
       learn+=1
     if analysis!=0:
-      average_utility.append(evaluatePolicy(simulator, Qval, gamma, steps, analysis))
+      average_utility.append(evaluatePolicy(simulator, policy_Given_Qval(simulator, Qval), gamma, steps, analysis))
   return policy_Given_Qval(simulator, Qval),average_utility
 
 def approxConvergedEpisode(average_utility):
@@ -754,7 +791,7 @@ def partB2(simulator):
 def partB3(simulator):
   gamma = 0.99
   alpha = 0.85
-  policy,average_utility_sarsa = sarsa(simulator, alpha, gamma)
+  policy,average_utility_sarsa = sarsa(simulator, alpha, gamma, analysis=0)
 
   print("partB -> 3")
   for i in range(5):
@@ -776,6 +813,41 @@ def partB4(simulator):
     plot_graph(list(range(1,1+len(average_utility))), average_utility, 'Number of Training episodes', 'Average Discounted reward', 'PartB_4_alpha='+str(a))
 
 
+def partB5():
+  grid = problem_layout_partB5()
+
+  # Best algorithm according to our observation: SARSA decay
+  print("PartB - 5")
+  average_reward = 0
+  for i in range(5):
+    simulator = instance(grid)
+    print(simulator.goal_state)
+
+    # policy,average_utility = sarsa(simulator, 0.25, 0.99, episodes=6000, analysis=10)
+    # plot_graph(list(range(1,1+len(average_utility))), average_utility, 'Number of Training episodes', 'Average Discounted reward', 'PartB_5_s'+str(i))
+    # reward = evaluatePolicy(simulator, policy, 0.99, steps=500, analysis=10)
+    # print("Instance: ", i+1, " : ", reward)
+
+    policy,average_utility = sarsa_decay(simulator, 0.25, 0.99, episodes=6000, analysis=0)
+    # plot_graph(list(range(1,1+len(average_utility))), average_utility, 'Number of Training episodes', 'Average Discounted reward', 'PartB_5_sd'+str(i))
+    reward = evaluatePolicy(simulator, policy, 0.99, steps=500, analysis=10)
+    print("Instance: ", i+1, " : ", reward)
+
+    # policy,average_utility = Qlearning(simulator, 0.25, 0.99, episodes=6000, analysis=10)
+    # plot_graph(list(range(1,1+len(average_utility))), average_utility, 'Number of Training episodes', 'Average Discounted reward', 'PartB_5_q'+str(i))
+    # reward = evaluatePolicy(simulator, policy, 0.99, steps=500, analysis=10)
+    # print("Instance: ", i+1, " : ", reward)
+
+    # policy,average_utility = Qlearning_decay(simulator, 0.25, 0.99, episodes=6000, analysis=10)
+    # plot_graph(list(range(1,1+len(average_utility))), average_utility, 'Number of Training episodes', 'Average Discounted reward', 'PartB_5_qd'+str(i))
+    # reward = evaluatePolicy(simulator, policy, 0.99, steps=500, analysis=10)
+    # print("Instance: ", i+1, " : ", reward)
+
+    average_reward+=reward
+  average_reward/=5
+  print("Average Reward: ", average_reward)
+
+
 def partB():
   grid = problem_layout()
   simulator = instance(grid)
@@ -790,6 +862,8 @@ def partB():
   # partB -> 4
   partB4(simulator)
 
-partA()
+# partA()
 
 # partB()
+
+partB5()
