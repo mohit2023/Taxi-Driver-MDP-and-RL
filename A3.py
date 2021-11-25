@@ -235,10 +235,13 @@ class MDP:
   def getState(self):
     return (self.state.location[0],self.state.location[1],self.state.active,self.env.pick[0],self.env.pick[1])
 
-  def reset(self):
+  def reset(self, restrict=False):
     depots = [depo for depo in self.env.depots if depo!=self.env.drop]
     pick = list(random.choice(depots))
-    taxi  = [random.randint(0,self.env.n-1),random.randint(0,self.env.m-1)]
+    if restrict:
+      taxi = list(random.choice(self.env.depots))
+    else:
+      taxi  = [random.randint(0,self.env.n-1),random.randint(0,self.env.m-1)]
     self.updatePassenger(pick)
     self.updateState(taxi, False)
 
@@ -247,6 +250,17 @@ class MDP:
     return str(self.__class__) + ": " + str(self.__dict__)
     
   
+def plot_graph(x, y, xlabel, ylabel, name):
+  plt.grid(True, linewidth=0.1, color='#ff0000', linestyle='-')
+  plt.plot(x, y, linestyle='dashed', linewidth=0.2)
+  plt.xlabel(xlabel)
+  plt.ylabel(ylabel)
+  plt.title(name)
+  plt.savefig('plot/'+name+'.png')
+  # plt.show()
+  plt.close()
+
+
 
 def problem_layout():
   grid = Grid(5,5)
@@ -534,6 +548,7 @@ def partA3b(simulator, epsilon):
     temp,policyLoss = policy_policyIteration(simulator, epsilon, gamma, policy)
     print(gamma, policyLoss)
     # TODO: plot graphs
+
     
 
 
@@ -546,10 +561,10 @@ def partA():
   # partA2a(simulator, epsilon)
 
   # partA -> 2 -> b
-  # partA2b(simulator, epsilon)
+  partA2b(simulator, epsilon)
 
   # partA -> 2 -> c
-  partA2c(simulator, epsilon)
+  # partA2c(simulator, epsilon)
 
   # partA -> 3 -> b
   # partA3b(simulator, epsilon)
@@ -559,7 +574,7 @@ def selectAction(simulator, PRexp, Qval, state):
   if state==simulator.goal_state:
     return 'Episode end'
   exp = random.random()
-  if exp<PRexp: # explore
+  if exp<=PRexp: # explore
     res = random.choice(simulator.actionList)
   else: # act according to optimal policy
     mxv = float('-inf')
@@ -568,7 +583,6 @@ def selectAction(simulator, PRexp, Qval, state):
         mxv = Qval[state][action]
         res = action
   return res
-
 
 def initialize_Qval(simulator):
   Qval = {}
@@ -581,7 +595,6 @@ def initialize_Qval(simulator):
         Qval[state][action] = 0.0
   return Qval
 
-
 def policy_Given_Qval(simulator, Qval):
   policy = {}
   for state in simulator.all_states:
@@ -593,16 +606,17 @@ def policy_Given_Qval(simulator, Qval):
     policy[state] = res
   return policy
 
-
 def evaluatePolicy(simulator, Qval, gamma, steps, analysis):
   policy = policy_Given_Qval(simulator, Qval)
   average_reward = 0
   for i in range(analysis):
-    simulator.reset()
+    simulator.reset(True)
     reward = 0
+    discount = 1
     while simulator.getState()!=simulator.goal_state and steps>0:
-      reward = simulator.applyAction(policy[simulator.getState()]) + gamma*reward
+      reward += discount*simulator.applyAction(policy[simulator.getState()])
       steps-=1
+      discount*=gamma
     average_reward+=reward
   average_reward /= analysis
   return average_reward
@@ -691,6 +705,22 @@ def sarsa_decay(simulator, alpha, gamma, epsilon=0.1, episodes=2000, steps=500, 
       average_utility.append(evaluatePolicy(simulator, Qval, gamma, steps, analysis))
   return policy_Given_Qval(simulator, Qval),average_utility
 
+def approxConvergedEpisode(average_utility):
+  con = 0
+  n = len(average_utility)
+  episode = n
+  for i in range(n-100,n):
+    con+=average_utility[i]
+  con/=100
+  for i in range(n-100):
+    val = 0
+    for j in range(i,i+10):
+      val+=average_utility[j]
+    val/=10
+    if abs(con-val)<0.5:
+      episode = i+5
+      break
+  return episode
 
 def partB2(simulator):
   gamma = 0.99
@@ -702,12 +732,15 @@ def partB2(simulator):
   policy4,average_utility_sarsa_decay = sarsa_decay(simulator, alpha, gamma)
 
   print("partB -> 2")
-  print("Qlearning: ", average_utility_Qlearning[len(average_utility_Qlearning)-1])
-  print("Qlearning_decay: ", average_utility_Qlearning_decay[len(average_utility_Qlearning_decay)-1])
-  print("sarsa: ", average_utility_sarsa[len(average_utility_sarsa)-1])
-  print("sarsa_decay: ", average_utility_sarsa_decay[len(average_utility_sarsa_decay)-1])
+  print("Qlearning: ", approxConvergedEpisode(average_utility_Qlearning))
+  print("Qlearning_decay: ", approxConvergedEpisode(average_utility_Qlearning_decay))
+  print("sarsa: ", approxConvergedEpisode(average_utility_sarsa))
+  print("sarsa_decay: ", approxConvergedEpisode(average_utility_sarsa_decay))
 
-  # TODO : plot graphs
+  plot_graph(list(range(1,1+len(average_utility_Qlearning))), average_utility_Qlearning, 'Number of Training episodes', 'Average Discounted reward', 'PartB_2_Qlearning')
+  plot_graph(list(range(1,1+len(average_utility_Qlearning_decay))), average_utility_Qlearning_decay, 'Number of Training episodes', 'Average Discounted reward', 'PartB_2_Qlearning_decay')
+  plot_graph(list(range(1,1+len(average_utility_sarsa))), average_utility_sarsa, 'Number of Training episodes', 'Average Discounted reward', 'PartB_2_SARSA')
+  plot_graph(list(range(1,1+len(average_utility_sarsa_decay))), average_utility_sarsa_decay, 'Number of Training episodes', 'Average Discounted reward', 'PartB_2_SARSA_decay')
 
 
 def partB():
@@ -717,6 +750,6 @@ def partB():
   # partB -> 2
   partB2(simulator)
 
-partA()
+# partA()
 
-# partB()
+partB()
