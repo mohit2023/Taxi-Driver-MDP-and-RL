@@ -236,10 +236,11 @@ class MDP:
     return (self.state.location[0],self.state.location[1],self.state.active,self.env.pick[0],self.env.pick[1])
 
   def reset(self, restrict=False):
-    depots = [depo for depo in self.env.depots if depo!=self.env.drop]
+    depots = [depo for depo in self.env.depots if depo!=tuple(self.env.drop)]
     pick = list(random.choice(depots))
     if restrict:
-      taxi = list(random.choice(self.env.depots))
+      # taxi = list(random.choice(self.env.depots))
+      taxi = list(random.choice([depo for depo in depots if depo!=pick]))
     else:
       taxi  = [random.randint(0,self.env.n-1),random.randint(0,self.env.m-1)]
     self.updatePassenger(pick)
@@ -382,10 +383,7 @@ def partA2b(simulator, epsilon):
 
 def simulate(simulator, policy, steps=20):
   for i in range(steps):
-    t = simulator.state.location
-    p = simulator.env.pick
-    a = simulator.state.active
-    current_state = (t[0],t[1],a,p[0],p[1])
+    current_state = simulator.getState()
     actionTotake = policy[current_state]
     print("state: ", current_state, " action prescribed: ", actionTotake)
     if(current_state == simulator.goal_state):
@@ -558,16 +556,16 @@ def partA():
   
   epsilon = 0.01
   # partA -> 2 -> a
-  # partA2a(simulator, epsilon)
+  partA2a(simulator, epsilon)
 
   # partA -> 2 -> b
   partA2b(simulator, epsilon)
 
   # partA -> 2 -> c
-  # partA2c(simulator, epsilon)
+  partA2c(simulator, epsilon)
 
   # partA -> 3 -> b
-  # partA3b(simulator, epsilon)
+  partA3b(simulator, epsilon)
 
 
 def selectAction(simulator, PRexp, Qval, state):
@@ -709,16 +707,16 @@ def approxConvergedEpisode(average_utility):
   con = 0
   n = len(average_utility)
   episode = n
-  for i in range(n-100,n):
+  for i in range(n-200,n):
     con+=average_utility[i]
-  con/=100
-  for i in range(n-100):
+  con/=200
+  for i in range(n-200):
     val = 0
-    for j in range(i,i+10):
+    for j in range(i,i+50):
       val+=average_utility[j]
-    val/=10
+    val/=50
     if abs(con-val)<0.5:
-      episode = i+5
+      episode = i+25
       break
   return episode
 
@@ -743,12 +741,29 @@ def partB2(simulator):
   plot_graph(list(range(1,1+len(average_utility_sarsa_decay))), average_utility_sarsa_decay, 'Number of Training episodes', 'Average Discounted reward', 'PartB_2_SARSA_decay')
 
 
+def partB3(simulator):
+  gamma = 0.99
+  alpha = 0.85
+  policy,average_utility_sarsa = sarsa(simulator, alpha, gamma)
+
+  print("partB -> 3")
+  for i in range(5):
+    print("\nRun: ", i+1)
+    simulator.reset(True)
+    simulate(simulator, policy, steps=30)
+
+
 def partB():
   grid = problem_layout()
   simulator = instance(grid)
+  print(simulator.env.drop)
 
   # partB -> 2
   partB2(simulator)
+
+  # partB -> 3
+  # Run on SARSA as it achieves its convergence quite early
+  # partB3(simulator)
 
 # partA()
 
