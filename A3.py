@@ -1,6 +1,7 @@
 import random
 import copy # TODO: check if allowed
 import numpy as np
+import matplotlib.pyplot as plt
 
 # list = [a,b] => list[0]=a=x-cordinate, list[1]=b=y-coordinate
 
@@ -354,6 +355,15 @@ def partA2b(simulator, epsilon):
     norm_distance,valuefn = value_iteration(simulator, epsilon, gamma)
     print(gamma, len(norm_distance))
     # TODO : plot graphs
+    index = []
+    for i in range(len(norm_distance)):
+      index.append(i+1)
+    plt.grid(True, linewidth=0.5, color='#ff0000', linestyle='-')
+    plt.plot(index,norm_distance,color='green', linestyle='dashed', linewidth = 3, marker='o', markerfacecolor='blue', markersize=12)
+    plt.xlabel('Iteration index')
+    plt.ylabel('max-norm distance')
+    plt.title('A-2-b, Gamma = '+str(gamma))
+    plt.show()
 
 
 def simulate(simulator, policy, steps=20):
