@@ -545,7 +545,6 @@ def partA3b(simulator, epsilon):
     policy,policyLoss = policy_policyIteration(simulator, epsilon, gamma)
     temp,policyLoss = policy_policyIteration(simulator, epsilon, gamma, policy)
     print(gamma, policyLoss)
-    # TODO: plot graphs
     index = []
     for i in range(len(policyLoss)):
       index.append(i+1)
