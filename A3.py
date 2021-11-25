@@ -377,7 +377,8 @@ def partA2b(simulator, epsilon):
     plt.plot(index,norm_distance,color='green', linestyle='dashed', linewidth = 3, marker='o', markerfacecolor='blue', markersize=12)
     plt.xlabel('Iteration index')
     plt.ylabel('max-norm distance')
-    plt.title('A-2-b, Gamma = '+str(gamma))
+    plt.title('A-2-b__Gamma = '+str(gamma))
+    plt.savefig('plot/'+'A-2-b__Gamma='+str(gamma)+'.png')
     plt.show()
 
 
@@ -556,16 +557,16 @@ def partA():
   
   epsilon = 0.01
   # partA -> 2 -> a
-  partA2a(simulator, epsilon)
+  # partA2a(simulator, epsilon)
 
   # partA -> 2 -> b
   partA2b(simulator, epsilon)
 
   # partA -> 2 -> c
-  partA2c(simulator, epsilon)
+  # partA2c(simulator, epsilon)
 
   # partA -> 3 -> b
-  partA3b(simulator, epsilon)
+  # partA3b(simulator, epsilon)
 
 
 def selectAction(simulator, PRexp, Qval, state):
@@ -753,18 +754,33 @@ def partB3(simulator):
     simulate(simulator, policy, steps=30)
 
 
+def partB4(simulator):
+  epsilon = [0, 0.05, 0.1, 0.5, 0.9]
+  alpha = [0.1, 0.2, 0.3, 0.4, 0.5]
+
+  for e in epsilon:
+    policy,average_utility = Qlearning(simulator, 0.1, 0.99, epsilon=e)
+    plot_graph(list(range(1,1+len(average_utility))), average_utility, 'Number of Training episodes', 'Average Discounted reward', 'PartB_4_epsilon='+str(e))
+  
+  for a in alpha:
+    policy,average_utility = Qlearning(simulator, a, 0.99)
+    plot_graph(list(range(1,1+len(average_utility))), average_utility, 'Number of Training episodes', 'Average Discounted reward', 'PartB_4_alpha='+str(a))
+
+
 def partB():
   grid = problem_layout()
   simulator = instance(grid)
-  print(simulator.env.drop)
 
   # partB -> 2
-  partB2(simulator)
+  # partB2(simulator)
 
   # partB -> 3
   # Run on SARSA as it achieves its convergence quite early
   # partB3(simulator)
 
-# partA()
+  # partB -> 4
+  partB4(simulator)
 
-partB()
+partA()
+
+# partB()
