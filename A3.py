@@ -1,8 +1,7 @@
 import random
-import copy # TODO: check if allowed
+import copy
 import numpy as np
 import matplotlib.pyplot as plt
-#mohit
 
 # list = [a,b] => list[0]=a=x-cordinate, list[1]=b=y-coordinate
 
@@ -370,7 +369,7 @@ def partA2b(simulator, epsilon):
   for gamma in discount:
     norm_distance,valuefn = value_iteration(simulator, epsilon, gamma)
     print(gamma, len(norm_distance))
-    # TODO : plot graphs
+    
     index = []
     for i in range(len(norm_distance)):
       index.append(i+1)
@@ -380,7 +379,8 @@ def partA2b(simulator, epsilon):
     plt.ylabel('max-norm distance')
     plt.title('A-2-b__Gamma = '+str(gamma))
     plt.savefig('plot/'+'A-2-b__Gamma='+str(gamma)+'.png')
-    plt.show()
+    # plt.show()
+    plt.close()
 
 
 def simulate(simulator, policy, steps=20):
@@ -509,19 +509,19 @@ def policy_policyIteration(simulator, epsilon, gamma, convergedPolicy={}, method
     policy[state] = random.choice(simulator.actionList)
 
   policyLoss = []
+  if convergedPolicy!={}:
+    policy_valuefn = policyEvaluation(simulator, convergedPolicy, epsilon, method, gamma)
   
   while(True):
     valuefn = policyEvaluation(simulator, policy, epsilon, method, gamma)
-    newPolicy = policyImprovement(simulator, gamma, valuefn)
-    converged = True
     
     if convergedPolicy!={}:
-      loss = 0
-      for state in simulator.all_states:
-        if convergedPolicy[state]!=policy[state]:
-          loss+=1
+      loss = normDistance(policy_valuefn, valuefn, simulator.all_states)
       policyLoss.append(loss)
 
+    newPolicy = policyImprovement(simulator, gamma, valuefn)
+    
+    converged = True
     for state in simulator.all_states:
       if newPolicy[state] != policy[state]:
         converged = False
@@ -534,8 +534,6 @@ def policy_policyIteration(simulator, epsilon, gamma, convergedPolicy={}, method
 
 def partA3b(simulator, epsilon):
   print("partA - 3 - b: ")
-
-  # TODO: to check if initial policy should be same for policy for the two runs of initially finding policy and then for calculating policy loss
 
   policy,policyLoss = policy_policyIteration(simulator, epsilon, 0.1) # give parameter method=2, for using policy evaluation by solving linear systems
 
@@ -561,13 +559,13 @@ def partA():
   # partA2a(simulator, epsilon)
 
   # partA -> 2 -> b
-  partA2b(simulator, epsilon)
+  # partA2b(simulator, epsilon)
 
   # partA -> 2 -> c
   # partA2c(simulator, epsilon)
 
   # partA -> 3 -> b
-  # partA3b(simulator, epsilon)
+  partA3b(simulator, epsilon)
 
 
 def selectAction(simulator, PRexp, Qval, state):
