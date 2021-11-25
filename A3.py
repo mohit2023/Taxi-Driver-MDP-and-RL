@@ -60,12 +60,12 @@ class Grid:
   def updatePick(self, location):
     self.check(location)
     if self.grid[tuple(location)].depot == True:
-      self.pick = location
+      self.pick = location.copy()
   
   def updateDrop(self, location):
     self.check(location)
     if self.grid[tuple(location)].depot == True:
-      self.drop = location
+      self.drop = location.copy()
 
   def __relativeDirection(self, p1, p2):
     if p1[1]+1 == p2[1] :
@@ -225,11 +225,11 @@ class MDP:
         return -1
   
   def updateState(self, loc, status):
-    self.state.location = loc
+    self.state.location = loc.copy()
     self.state.active = status
 
   def updatePassenger(self, location):
-    self.env.pick = location
+    self.env.pick = location.copy()
 
   def getState(self):
     return (self.state.location[0],self.state.location[1],self.state.active,self.env.pick[0],self.env.pick[1])
@@ -298,7 +298,7 @@ def value_iteration(simulator, epsilon, gamma):
   while(True):
     cvfn[goal_state] = 0
     for state in all_states:
-      if(state == goal_state):
+      if state==goal_state:
         continue
       cvfn[state] = max([sum([simulator.transition[state][action][result]*(simulator.reward[state][action][result] + (gamma*pvfn[result])) for result in simulator.transition[state][action]]) for action in actionList])
 
@@ -315,7 +315,7 @@ def value_iteration(simulator, epsilon, gamma):
 def policy_Given_Valuefn(simulator, gamma, valuefn):
   policy = {}
   goal_state = simulator.goal_state
-  policy[goal_state] = 'Episode ended'
+  policy[goal_state] = 'Episode end'
   for state in simulator.all_states:
     if(state == goal_state):
       continue
@@ -372,8 +372,8 @@ def simulate(simulator, policy, steps=20):
 def partA2c(simulator, epsilon):
   print("partA - 2 - c: ")
 
-  taxiLocation = simulator.state.location
-  passengerLocation = simulator.env.pick
+  taxiLocation = simulator.state.location.copy()
+  passengerLocation = simulator.env.pick.copy()
   destLocation = simulator.env.drop
   depots = simulator.env.depots
   depots = [list(depo) for depo in depots if list(depo)!=destLocation]
@@ -400,8 +400,8 @@ def partA2c(simulator, epsilon):
     print("\n Discount factor 0.1, Taxi at: ", newTaxiLocation, "Passenger at: ", newPassengerLocation)
     simulate(simulator, policy_10)
 
-    simulator.updateState(taxiLocation, False)
-    simulator.env.updatePick(passengerLocation)
+    simulator.updateState(newTaxiLocation, False)
+    simulator.env.updatePick(newPassengerLocation)
     print("\n Discount factor 0.99, Taxi at: ", newTaxiLocation, "Passenger at: ", newPassengerLocation)
     simulate(simulator, policy_99)
 
@@ -478,7 +478,7 @@ def policyImprovement(simulator, gamma, valuefn):
 def policy_policyIteration(simulator, epsilon, gamma, convergedPolicy={}, method=1):
   # make random policy
   policy = {}
-  policy[simulator.goal_state] = 'Episode ended'
+  policy[simulator.goal_state] = 'Episode end'
   for state in simulator.all_states:
     if state == simulator.goal_state:
       continue
@@ -533,16 +533,16 @@ def partA():
   
   epsilon = 0.01
   # partA -> 2 -> a
-  partA2a(simulator, epsilon)
+  # partA2a(simulator, epsilon)
 
   # partA -> 2 -> b
-  partA2b(simulator, epsilon)
+  # partA2b(simulator, epsilon)
 
   # partA -> 2 -> c
   partA2c(simulator, epsilon)
 
   # partA -> 3 -> b
-  partA3b(simulator, epsilon)
+  # partA3b(simulator, epsilon)
 
 
 def selectAction(simulator, PRexp, Qval, state):
@@ -697,6 +697,8 @@ def partB2(simulator):
   print("sarsa: ", average_utility_sarsa[len(average_utility_sarsa)-1])
   print("sarsa_decay: ", average_utility_sarsa_decay[len(average_utility_sarsa_decay)-1])
 
+  # TODO : plot graphs
+
 
 def partB():
   grid = problem_layout()
@@ -707,4 +709,4 @@ def partB():
 
 partA()
 
-partB()
+# partB()
