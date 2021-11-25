@@ -546,6 +546,17 @@ def partA3b(simulator, epsilon):
     temp,policyLoss = policy_policyIteration(simulator, epsilon, gamma, policy)
     print(gamma, policyLoss)
     # TODO: plot graphs
+    index = []
+    for i in range(len(policyLoss)):
+      index.append(i+1)
+    plt.grid(True, linewidth=0.5, color='#ff0000', linestyle='-')
+    plt.plot(index,policyLoss,color='green', linestyle='dashed', linewidth = 3, marker='o', markerfacecolor='blue', markersize=12)
+    plt.xlabel('Iteration index')
+    plt.ylabel('Policy Loss')
+    plt.title('A-3-b__Gamma = '+str(gamma))
+    plt.savefig('plot/'+'A-3-b__Gamma='+str(gamma)+'.png')
+    # plt.show()
+    plt.close()
 
     
 
