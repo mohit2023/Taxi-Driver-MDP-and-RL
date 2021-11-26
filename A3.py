@@ -520,6 +520,7 @@ def partA3b(simulator, epsilon):
   print(policyLoss)
 
   discount = [0.01, 0.1, 0.5, 0.8, 0.99]
+  overlap = []
   for gamma in discount:
     policy,policyLoss = policy_policyIteration(simulator, epsilon, gamma)
     temp,policyLoss = policy_policyIteration(simulator, epsilon, gamma, policy)
@@ -527,6 +528,7 @@ def partA3b(simulator, epsilon):
     index = []
     for i in range(len(policyLoss)):
       index.append(i+1)
+    overlap.append([policyLoss,index])
     plt.grid(True, linewidth=0.5, color='#ff0000', linestyle='-')
     plt.plot(index,policyLoss,color='green', linestyle='dashed', linewidth = 3, marker='o', markerfacecolor='blue', markersize=12)
     plt.xlabel('Iteration index')
@@ -536,7 +538,19 @@ def partA3b(simulator, epsilon):
     # plt.show()
     plt.close()
 
-    
+  
+  plt.plot(overlap[0][1], overlap[0][0], color='r', label = "Gamma = 0.01")
+  plt.plot(overlap[1][1], overlap[1][0], color='g', label ='Gamma = 0.1')
+  plt.plot(overlap[2][1], overlap[2][0], color='b', label ='Gamma = 0.5')
+  plt.plot(overlap[3][1], overlap[3][0], color='y', label ='Gamma = 0.8')
+  plt.plot(overlap[4][1], overlap[4][0], color='c', label ='Gamma = 0.99')
+  plt.xlabel('Iteration index')
+  plt.ylabel('Policy Loss')
+  plt.title('A-3-b_All')
+  plt.legend()
+  plt.savefig('plot/'+'A-3-b.png')
+  #plt.show()
+  plt.close()
 
 
 
@@ -726,14 +740,15 @@ def partA2b(simulator, epsilon):
     # plt.show()
     plt.close()
 
-  plt.plot(overlap[0][1], overlap[0][0], color='r')
-  plt.plot(overlap[1][1], overlap[1][0], color='g')
-  plt.plot(overlap[2][1], overlap[2][0], color='b')
-  plt.plot(overlap[3][1], overlap[3][0], color='y')
-  plt.plot(overlap[4][1], overlap[4][0], color='c')
+  plt.plot(overlap[0][1], overlap[0][0], color='r', label = "Gamma = 0.01")
+  plt.plot(overlap[1][1], overlap[1][0], color='g', label ='Gamma = 0.1')
+  plt.plot(overlap[2][1], overlap[2][0], color='b', label ='Gamma = 0.5')
+  plt.plot(overlap[3][1], overlap[3][0], color='y', label ='Gamma = 0.8')
+  plt.plot(overlap[4][1], overlap[4][0], color='c', label ='Gamma = 0.99')
   plt.xlabel('Iteration index')
   plt.ylabel('max-norm distance')
   plt.title('A-2-b_All')
+  plt.legend()
   plt.savefig('plot/'+'A-2-b.png')
   #plt.show()
   plt.close()
@@ -829,16 +844,16 @@ def partA():
   
   epsilon = 0.01
   # partA -> 2 -> a
-  # partA2a(simulator, epsilon)
+  partA2a(simulator, epsilon)
 
   # partA -> 2 -> b
-  # partA2b(simulator, epsilon)
+  partA2b(simulator, epsilon)
 
   # partA -> 2 -> c
   partA2c(simulator, epsilon)
 
   # partA -> 3 -> b
-  #partA3b(simulator, epsilon)
+  partA3b(simulator, epsilon)
 
 
 def partB():
