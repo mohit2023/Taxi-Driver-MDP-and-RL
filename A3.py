@@ -170,7 +170,7 @@ class MDP:
             if dir == action:
               dict_action_t[result] = 0.85
             else:
-              dict_action_t[result] = 0.15/3
+              dict_action_t[result] = 0.15/3.0
             dict_action_r[result] = -1
 
         dict_state_t[action] = dict_action_t
@@ -218,9 +218,12 @@ class MDP:
     if self.env.pick != self.state.location:
       return -10
     else:
-      self.state.active = False
-      if self.env.drop == self.state.location:
-        return 20
+      if self.state.active==True:
+        self.state.active = False
+        if self.env.drop == self.state.location:
+          return 20
+        else:
+          return -1
       else:
         return -1
   
@@ -239,7 +242,7 @@ class MDP:
     pick = list(random.choice(depots))
     if restrict:
       # taxi = list(random.choice(self.env.depots))
-      taxi = list(random.choice([depo for depo in depots if depo!=pick]))
+      taxi = list(random.choice([depo for depo in depots if list(depo)!=pick]))
     else:
       taxi  = [random.randint(0,self.env.n-1),random.randint(0,self.env.m-1)]
     self.updatePassenger(pick)
