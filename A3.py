@@ -818,7 +818,7 @@ def partB2(simulator):
 
 def partB3(simulator):
   gamma = 0.99
-  alpha = 0.85
+  alpha = 0.25
   policy,average_utility_sarsa = sarsa(simulator, alpha, gamma, analysis=0)
 
   print("partB -> 3")
@@ -848,19 +848,19 @@ def partA():
   
   epsilon = 0.01
   # partA -> 2 -> a
-  # partA2a(simulator, epsilon)
+  partA2a(simulator, epsilon)
 
   # partA -> 2 -> b
-  # partA2b(simulator, epsilon)
+  partA2b(simulator, epsilon)
 
   # partA -> 2 -> c
-  # partA2c(simulator, epsilon)
+  partA2c(simulator, epsilon)
 
   # partA -> 3 -> b
-  # partA3b(simulator, epsilon)
+  partA3b(simulator, epsilon)
   
   # give parameter method=2, for using policy evaluation by solving system of linear equations as follows:
-  # partA3b(simulator, epsilon, method=2)
+  partA3b(simulator, epsilon, method=2)
 
 
 def partB():
@@ -872,10 +872,10 @@ def partB():
 
   # partB -> 3
   # Run on SARSA as it achieves its convergence quite early
-  # partB3(simulator)
+  partB3(simulator)
 
   # partB -> 4
-  # partB4(simulator)
+  partB4(simulator)
 
 
 def partB5():
@@ -912,7 +912,7 @@ def partB5():
   average_reward/=5
   print("Average Reward: ", average_reward)
 
-# partA()
+partA()
 
 partB()
 
