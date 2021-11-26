@@ -404,6 +404,7 @@ def partA2b(simulator, epsilon):
   discount = [0.01, 0.1, 0.5, 0.8, 0.99]
 
   print("partA - 2 - b: ")
+  overlap = []
   for gamma in discount:
     norm_distance,valuefn = value_iteration(simulator, epsilon, gamma)
     print(gamma, len(norm_distance))
@@ -411,6 +412,7 @@ def partA2b(simulator, epsilon):
     index = []
     for i in range(len(norm_distance)):
       index.append(i+1)
+    overlap.append([norm_distance,index])
     plt.grid(True, linewidth=0.5, color='#ff0000', linestyle='-')
     plt.plot(index,norm_distance,color='green', linestyle='dashed', linewidth = 3, marker='o', markerfacecolor='blue', markersize=12)
     plt.xlabel('Iteration index')
@@ -420,6 +422,17 @@ def partA2b(simulator, epsilon):
     # plt.show()
     plt.close()
 
+  plt.plot(overlap[0][1], overlap[0][0], color='r')
+  plt.plot(overlap[1][1], overlap[1][0], color='g')
+  plt.plot(overlap[2][1], overlap[2][0], color='b')
+  plt.plot(overlap[3][1], overlap[3][0], color='y')
+  plt.plot(overlap[4][1], overlap[4][0], color='c')
+  plt.xlabel('Iteration index')
+  plt.ylabel('max-norm distance')
+  plt.title('A-2-b_All')
+  plt.savefig('plot/'+'A-2-b.png')
+  plt.close()
+  #plt.show()
 
 def simulate(simulator, policy, steps=20):
   for i in range(steps):
@@ -604,16 +617,16 @@ def partA():
   
   epsilon = 0.01
   # partA -> 2 -> a
-  # partA2a(simulator, epsilon)
+  #partA2a(simulator, epsilon)
 
   # partA -> 2 -> b
-  # partA2b(simulator, epsilon)
+  partA2b(simulator, epsilon)
 
   # partA -> 2 -> c
-  # partA2c(simulator, epsilon)
+  #partA2c(simulator, epsilon)
 
   # partA -> 3 -> b
-  partA3b(simulator, epsilon)
+  #partA3b(simulator, epsilon)
 
 
 def selectAction(simulator, PRexp, Qval, state):
@@ -853,14 +866,15 @@ def partB():
   simulator = instance(grid)
 
   # partB -> 2
-  # partB2(simulator)
+  partB2(simulator)
 
   # partB -> 3
   # Run on SARSA as it achieves its convergence quite early
-  # partB3(simulator)
+  partB3(simulator)
 
   # partB -> 4
   partB4(simulator)
+
 
 # partA()
 
