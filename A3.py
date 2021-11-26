@@ -102,7 +102,6 @@ class Taxi:
   def __str__(self):
     return str(self.__class__) + ": " + str(self.__dict__)
 
-
 class MDP:
 
   actionList = ['North', 'South', 'East', 'West', 'Pickup', 'Drop']
@@ -250,7 +249,8 @@ class MDP:
   def __str__(self):
     return str(self.__class__) + ": " + str(self.__dict__)
     
-  
+
+
 def plot_graph(x, y, xlabel, ylabel, name):
   plt.grid(True, linewidth=0.1, color='#ff0000', linestyle='-')
   plt.plot(x, y, linestyle='dashed', linewidth=0.2)
@@ -277,6 +277,7 @@ def problem_layout():
   ]
   grid.addWalls(walls)
   return grid
+
 
 def problem_layout_partB5():
   grid = Grid(10,10)
@@ -316,6 +317,7 @@ def problem_layout_partB5():
   grid.addWalls(walls)
   return grid
 
+
 def instance(grid):
   posDepots = grid.depots
   startDepo = random.choice(posDepots)
@@ -333,11 +335,13 @@ def instance(grid):
   return simulator
 
 
+
 def normDistance(cvfn, pvfn, all_states):
   normd = 0
   for state in all_states:
     normd = max(normd, abs(cvfn[state]-pvfn[state])) 
   return normd
+
 
 def value_iteration(simulator, epsilon, gamma):
   pvfn = {}
@@ -387,52 +391,10 @@ def policy_Given_Valuefn(simulator, gamma, valuefn):
 def policy_valueIteration(simulator, epsilon, gamma):
   norm_distance,valuefn = value_iteration(simulator, epsilon, gamma)
   policy = policy_Given_Valuefn(simulator, gamma, valuefn)
-  
+
   return policy,norm_distance
 
 
-def partA2a(simulator, epsilon):
-  gamma = 0.9
-  policy,norm_distance = policy_valueIteration(simulator, epsilon, gamma)
-
-  print("partA - 2 - a: ")
-  print(policy)
-  print("choosen epsilon: ", epsilon, " Number of iteration: ", len(norm_distance))
-
-
-def partA2b(simulator, epsilon):
-  discount = [0.01, 0.1, 0.5, 0.8, 0.99]
-
-  print("partA - 2 - b: ")
-  overlap = []
-  for gamma in discount:
-    norm_distance,valuefn = value_iteration(simulator, epsilon, gamma)
-    print(gamma, len(norm_distance))
-    
-    index = []
-    for i in range(len(norm_distance)):
-      index.append(i+1)
-    overlap.append([norm_distance,index])
-    plt.grid(True, linewidth=0.5, color='#ff0000', linestyle='-')
-    plt.plot(index,norm_distance,color='green', linestyle='dashed', linewidth = 3, marker='o', markerfacecolor='blue', markersize=12)
-    plt.xlabel('Iteration index')
-    plt.ylabel('max-norm distance')
-    plt.title('A-2-b__Gamma = '+str(gamma))
-    plt.savefig('plot/'+'A-2-b__Gamma='+str(gamma)+'.png')
-    # plt.show()
-    plt.close()
-
-  plt.plot(overlap[0][1], overlap[0][0], color='r')
-  plt.plot(overlap[1][1], overlap[1][0], color='g')
-  plt.plot(overlap[2][1], overlap[2][0], color='b')
-  plt.plot(overlap[3][1], overlap[3][0], color='y')
-  plt.plot(overlap[4][1], overlap[4][0], color='c')
-  plt.xlabel('Iteration index')
-  plt.ylabel('max-norm distance')
-  plt.title('A-2-b_All')
-  plt.savefig('plot/'+'A-2-b.png')
-  plt.close()
-  #plt.show()
 
 def simulate(simulator, policy, steps=20):
   for i in range(steps):
@@ -444,41 +406,7 @@ def simulate(simulator, policy, steps=20):
     simulator.applyAction(actionTotake)
 
 
-def partA2c(simulator, epsilon):
-  print("partA - 2 - c: ")
 
-  taxiLocation = simulator.state.location.copy()
-  passengerLocation = simulator.env.pick.copy()
-  destLocation = simulator.env.drop
-  depots = simulator.env.depots
-  depots = [list(depo) for depo in depots if list(depo)!=destLocation]
-
-  policy_10,norm_distance_10 = policy_valueIteration(simulator, epsilon, 0.1)
-  policy_99,norm_distance_99 = policy_valueIteration(simulator, epsilon, 0.99)
-
-  print("\n Discount factor 0.1, Taxi at: ", taxiLocation, "Passenger at: ", passengerLocation)
-  simulate(simulator, policy_10)
-
-  simulator.updateState(taxiLocation, False)
-  simulator.env.updatePick(passengerLocation)
-  print("\n Discount factor 0.99, Taxi at: ", taxiLocation, "Passenger at: ", passengerLocation)
-  simulate(simulator, policy_99)
-
-  # Run by varying taxi location and passenger location, (run num times)
-  num = 5
-  for i in range(num):
-    newTaxiLocation = [random.randint(0,simulator.env.n-1),random.randint(0,simulator.env.m-1)]
-    newPassengerLocation = random.choice(depots)
-
-    simulator.updateState(newTaxiLocation, False)
-    simulator.env.updatePick(newPassengerLocation)
-    print("\n Discount factor 0.1, Taxi at: ", newTaxiLocation, "Passenger at: ", newPassengerLocation)
-    simulate(simulator, policy_10)
-
-    simulator.updateState(newTaxiLocation, False)
-    simulator.env.updatePick(newPassengerLocation)
-    print("\n Discount factor 0.99, Taxi at: ", newTaxiLocation, "Passenger at: ", newPassengerLocation)
-    simulate(simulator, policy_99)
 
 
 def policyEvaluation_iterate(simulator, policy, epsilon, gamma):
@@ -611,22 +539,7 @@ def partA3b(simulator, epsilon):
     
 
 
-def partA():
-  grid = problem_layout()
-  simulator = instance(grid)
-  
-  epsilon = 0.01
-  # partA -> 2 -> a
-  #partA2a(simulator, epsilon)
 
-  # partA -> 2 -> b
-  partA2b(simulator, epsilon)
-
-  # partA -> 2 -> c
-  #partA2c(simulator, epsilon)
-
-  # partA -> 3 -> b
-  #partA3b(simulator, epsilon)
 
 
 def selectAction(simulator, PRexp, Qval, state):
@@ -780,6 +693,89 @@ def approxConvergedEpisode(average_utility):
       break
   return episode
 
+
+
+def partA2a(simulator, epsilon):
+  gamma = 0.9
+  policy,norm_distance = policy_valueIteration(simulator, epsilon, gamma)
+
+  print("partA - 2 - a: \n")
+  print(policy)
+  print("\nchoosen epsilon: ", epsilon, " Number of iteration: ", len(norm_distance))
+
+
+def partA2b(simulator, epsilon):
+  discount = [0.01, 0.1, 0.5, 0.8, 0.99]
+
+  print("partA - 2 - b: \n")
+  overlap = []
+  for gamma in discount:
+    norm_distance,valuefn = value_iteration(simulator, epsilon, gamma)
+    print("Gamma: ", gamma, " - Number of iterations for convergence: ", len(norm_distance))
+    
+    index = []
+    for i in range(len(norm_distance)):
+      index.append(i+1)
+    overlap.append([norm_distance,index])
+    plt.grid(True, linewidth=0.5, color='#ff0000', linestyle='-')
+    plt.plot(index,norm_distance,color='green', linestyle='dashed', linewidth = 3, marker='o', markerfacecolor='blue', markersize=12)
+    plt.xlabel('Iteration index')
+    plt.ylabel('max-norm distance')
+    plt.title('A-2-b__Gamma = '+str(gamma))
+    plt.savefig('plot/'+'A-2-b__Gamma='+str(gamma)+'.png')
+    # plt.show()
+    plt.close()
+
+  plt.plot(overlap[0][1], overlap[0][0], color='r')
+  plt.plot(overlap[1][1], overlap[1][0], color='g')
+  plt.plot(overlap[2][1], overlap[2][0], color='b')
+  plt.plot(overlap[3][1], overlap[3][0], color='y')
+  plt.plot(overlap[4][1], overlap[4][0], color='c')
+  plt.xlabel('Iteration index')
+  plt.ylabel('max-norm distance')
+  plt.title('A-2-b_All')
+  plt.savefig('plot/'+'A-2-b.png')
+  #plt.show()
+  plt.close()
+
+
+def partA2c(simulator, epsilon):
+  print("partA - 2 - c: \n")
+
+  taxiLocation = simulator.state.location.copy()
+  passengerLocation = simulator.env.pick.copy()
+  destLocation = simulator.env.drop
+  depots = simulator.env.depots
+  depots = [list(depo) for depo in depots if list(depo)!=destLocation]
+
+  policy_10,norm_distance_10 = policy_valueIteration(simulator, epsilon, 0.1)
+  policy_99,norm_distance_99 = policy_valueIteration(simulator, epsilon, 0.99)
+
+  print("\n Discount factor 0.1, Taxi at: ", taxiLocation, "Passenger at: ", passengerLocation)
+  simulate(simulator, policy_10)
+
+  simulator.updateState(taxiLocation, False)
+  simulator.env.updatePick(passengerLocation)
+  print("\n Discount factor 0.99, Taxi at: ", taxiLocation, "Passenger at: ", passengerLocation)
+  simulate(simulator, policy_99)
+
+  # Run by varying taxi location and passenger location, (run num times)
+  num = 5
+  for i in range(num):
+    newTaxiLocation = [random.randint(0,simulator.env.n-1),random.randint(0,simulator.env.m-1)]
+    newPassengerLocation = random.choice(depots)
+
+    simulator.updateState(newTaxiLocation, False)
+    simulator.env.updatePick(newPassengerLocation)
+    print("\n\n Discount factor 0.1, Taxi at: ", newTaxiLocation, "Passenger at: ", newPassengerLocation)
+    simulate(simulator, policy_10)
+
+    simulator.updateState(newTaxiLocation, False)
+    simulator.env.updatePick(newPassengerLocation)
+    print("\n Discount factor 0.99, Taxi at: ", newTaxiLocation, "Passenger at: ", newPassengerLocation)
+    simulate(simulator, policy_99)
+
+
 def partB2(simulator):
   gamma = 0.99
   alpha = 0.85
@@ -826,6 +822,40 @@ def partB4(simulator):
     plot_graph(list(range(1,1+len(average_utility))), average_utility, 'Number of Training episodes', 'Average Discounted reward', 'PartB_4_alpha='+str(a))
 
 
+
+def partA():
+  grid = problem_layout()
+  simulator = instance(grid)
+  
+  epsilon = 0.01
+  # partA -> 2 -> a
+  # partA2a(simulator, epsilon)
+
+  # partA -> 2 -> b
+  # partA2b(simulator, epsilon)
+
+  # partA -> 2 -> c
+  partA2c(simulator, epsilon)
+
+  # partA -> 3 -> b
+  #partA3b(simulator, epsilon)
+
+
+def partB():
+  grid = problem_layout()
+  simulator = instance(grid)
+
+  # partB -> 2
+  partB2(simulator)
+
+  # partB -> 3
+  # Run on SARSA as it achieves its convergence quite early
+  partB3(simulator)
+
+  # partB -> 4
+  partB4(simulator)
+
+
 def partB5():
   grid = problem_layout_partB5()
 
@@ -860,24 +890,8 @@ def partB5():
   average_reward/=5
   print("Average Reward: ", average_reward)
 
-
-def partB():
-  grid = problem_layout()
-  simulator = instance(grid)
-
-  # partB -> 2
-  partB2(simulator)
-
-  # partB -> 3
-  # Run on SARSA as it achieves its convergence quite early
-  partB3(simulator)
-
-  # partB -> 4
-  partB4(simulator)
-
-
-# partA()
+partA()
 
 # partB()
 
-partB5()
+# partB5()
