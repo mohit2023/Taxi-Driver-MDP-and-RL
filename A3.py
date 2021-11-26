@@ -410,8 +410,6 @@ def simulate(simulator, policy, steps=20):
 
 
 
-
-
 def policyEvaluation_iterate(simulator, policy, epsilon, gamma):
   pvfn = {}
   cvfn = {}
@@ -481,15 +479,17 @@ def policyImprovement(simulator, gamma, valuefn):
   return policy_Given_Valuefn(simulator, gamma, valuefn)
 
 
-def policy_policyIteration(simulator, epsilon, gamma, convergedPolicy={}, method=1):
-  # make random policy
+def random_policy(simulator):
   policy = {}
   policy[simulator.goal_state] = 'Episode end'
   for state in simulator.all_states:
     if state == simulator.goal_state:
       continue
     policy[state] = random.choice(simulator.actionList)
+  return policy
 
+
+def policy_policyIteration(simulator, policy, epsilon, gamma, method, convergedPolicy={}):
   policyLoss = []
   if convergedPolicy!={}:
     policy_valuefn = policyEvaluation(simulator, convergedPolicy, epsilon, method, gamma)
@@ -512,50 +512,6 @@ def policy_policyIteration(simulator, epsilon, gamma, convergedPolicy={}, method
     policy = copy.deepcopy(newPolicy)
 
   return policy,policyLoss
-
-
-def partA3b(simulator, epsilon):
-  print("partA - 3 - b: ")
-
-  policy,policyLoss = policy_policyIteration(simulator, epsilon, 0.1) # give parameter method=2, for using policy evaluation by solving linear systems
-
-  temp,policyLoss = policy_policyIteration(simulator, epsilon, 0.1, policy)
-  print(policyLoss)
-
-  discount = [0.01, 0.1, 0.5, 0.8, 0.99]
-  overlap = []
-  for gamma in discount:
-    policy,policyLoss = policy_policyIteration(simulator, epsilon, gamma)
-    temp,policyLoss = policy_policyIteration(simulator, epsilon, gamma, policy)
-    print(gamma, policyLoss)
-    index = []
-    for i in range(len(policyLoss)):
-      index.append(i+1)
-    overlap.append([policyLoss,index])
-    plt.grid(True, linewidth=0.5, color='#ff0000', linestyle='-')
-    plt.plot(index,policyLoss,color='green', linestyle='dashed', linewidth = 3, marker='o', markerfacecolor='blue', markersize=12)
-    plt.xlabel('Iteration index')
-    plt.ylabel('Policy Loss')
-    plt.title('A-3-b__Gamma = '+str(gamma))
-    plt.savefig('plot/'+'A-3-b__Gamma='+str(gamma)+'.png')
-    # plt.show()
-    plt.close()
-
-  
-  plt.plot(overlap[0][1], overlap[0][0], color='r', label = "Gamma = 0.01")
-  plt.plot(overlap[1][1], overlap[1][0], color='g', label ='Gamma = 0.1')
-  plt.plot(overlap[2][1], overlap[2][0], color='b', label ='Gamma = 0.5')
-  plt.plot(overlap[3][1], overlap[3][0], color='y', label ='Gamma = 0.8')
-  plt.plot(overlap[4][1], overlap[4][0], color='c', label ='Gamma = 0.99')
-  plt.xlabel('Iteration index')
-  plt.ylabel('Policy Loss')
-  plt.title('A-3-b_All')
-  plt.legend()
-  plt.savefig('plot/'+'A-3-b.png')
-  #plt.show()
-  plt.close()
-
-
 
 
 
@@ -794,9 +750,54 @@ def partA2c(simulator, epsilon):
     simulate(simulator, policy_99)
 
 
+def partA3b(simulator, epsilon, method = 1):
+  print("partA - 3 - b: ")
+
+  randomPolicy = random_policy(simulator)
+  policy,policyLoss = policy_policyIteration(simulator, randomPolicy.copy(), epsilon, 0.1, method)
+
+  temp,policyLoss = policy_policyIteration(simulator, randomPolicy.copy(), epsilon, 0.1, method, policy)
+  print(policyLoss)
+
+  discount = [0.01, 0.1, 0.5, 0.8, 0.99]
+  overlap = []
+  for gamma in discount:
+    randomPolicy = random_policy(simulator)
+    policy,policyLoss = policy_policyIteration(simulator, randomPolicy.copy(), epsilon, gamma, method)
+    temp,policyLoss = policy_policyIteration(simulator,randomPolicy.copy(), epsilon, gamma, method, policy)
+    print(gamma, policyLoss)
+    index = []
+    for i in range(len(policyLoss)):
+      index.append(i+1)
+    overlap.append([policyLoss,index])
+    plt.grid(True, linewidth=0.5, color='#ff0000', linestyle='-')
+    plt.plot(index,policyLoss,color='green', linestyle='dashed', linewidth = 3, marker='o', markerfacecolor='blue', markersize=12)
+    plt.xlabel('Iteration index')
+    plt.ylabel('Policy Loss')
+    plt.title('A-3-b__Gamma = '+str(gamma))
+    plt.savefig('plot/'+'A-3-b__Gamma='+str(gamma)+'.png')
+    # plt.show()
+    plt.close()
+
+  
+  plt.plot(overlap[0][1], overlap[0][0], color='r', label = "Gamma = 0.01")
+  plt.plot(overlap[1][1], overlap[1][0], color='g', label ='Gamma = 0.1')
+  plt.plot(overlap[2][1], overlap[2][0], color='b', label ='Gamma = 0.5')
+  plt.plot(overlap[3][1], overlap[3][0], color='y', label ='Gamma = 0.8')
+  plt.plot(overlap[4][1], overlap[4][0], color='c', label ='Gamma = 0.99')
+  plt.xlabel('Iteration index')
+  plt.ylabel('Policy Loss')
+  plt.title('A-3-b_All')
+  plt.legend()
+  plt.savefig('plot/'+'A-3-b.png')
+  #plt.show()
+  plt.close()
+
+
+
 def partB2(simulator):
   gamma = 0.99
-  alpha = 0.85
+  alpha = 0.25
 
   policy1,average_utility_Qlearning = Qlearning(simulator, alpha, gamma)
   policy2,average_utility_Qlearning_decay = Qlearning_decay(simulator, alpha, gamma)
@@ -847,16 +848,19 @@ def partA():
   
   epsilon = 0.01
   # partA -> 2 -> a
-  partA2a(simulator, epsilon)
+  # partA2a(simulator, epsilon)
 
   # partA -> 2 -> b
-  partA2b(simulator, epsilon)
+  # partA2b(simulator, epsilon)
 
   # partA -> 2 -> c
-  partA2c(simulator, epsilon)
+  # partA2c(simulator, epsilon)
 
   # partA -> 3 -> b
-  partA3b(simulator, epsilon)
+  # partA3b(simulator, epsilon)
+  
+  # give parameter method=2, for using policy evaluation by solving system of linear equations as follows:
+  # partA3b(simulator, epsilon, method=2)
 
 
 def partB():
@@ -868,10 +872,10 @@ def partB():
 
   # partB -> 3
   # Run on SARSA as it achieves its convergence quite early
-  partB3(simulator)
+  # partB3(simulator)
 
   # partB -> 4
-  partB4(simulator)
+  # partB4(simulator)
 
 
 def partB5():
@@ -908,8 +912,8 @@ def partB5():
   average_reward/=5
   print("Average Reward: ", average_reward)
 
-partA()
+# partA()
 
-# partB()
+partB()
 
 # partB5()
