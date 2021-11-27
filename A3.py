@@ -823,7 +823,7 @@ def partA3b(simulator, epsilon, method = 1):
   plt.ylabel('Policy Loss')
   plt.title('A-3-b_All')
   plt.legend()
-  plt.savefig('plot/'+'A-3-b.png')
+  plt.savefig('A-3-b.png')
   #plt.show()
   plt.close()
 
