@@ -5,12 +5,14 @@ import matplotlib.pyplot as plt
 
 # list = [a,b] => list[0]=a=x-cordinate, list[1]=b=y-coordinate
 
+# This denotes one cell of the grid, contains information for the adjacent walls and wether it is a depot or not
 class Cell:
   def __init__(self):
     self.depot = False
     # set walls
     self.walls = {'North': False, 'South': False, 'East': False, 'West': False}
 
+# Makes the grid, with walls and depots. Also stores information for goal cell and initial location of passenger
 class Grid:
   
   __reverse = {'North': 'South', 'South': 'North', 'East': 'West', 'West': 'East'}
@@ -84,6 +86,7 @@ class Grid:
     if location[0] >= self.n or location[1] >= self.m or location[0] < 0 or location[1] < 0:
       raise Exception('Location not in grid')  
     
+# Stores taxi location and its status wether passenger is sitting inside or not
 class Taxi:
   def __init__(self, location):
     self.location = location
@@ -102,6 +105,7 @@ class Taxi:
   def __str__(self):
     return str(self.__class__) + ": " + str(self.__dict__)
 
+# Stores the grid and taxi, and provides functions for simulation of the stochastic effects
 class MDP:
 
   actionList = ['North', 'South', 'East', 'West', 'Pickup', 'Drop']
@@ -119,6 +123,7 @@ class MDP:
     self.transition = {}
     self.reward = {}
 
+    # generate transition and reward tables
     for state in self.all_states:
       if(state == self.goal_state):
         continue
@@ -237,6 +242,7 @@ class MDP:
   def getState(self):
     return (self.state.location[0],self.state.location[1],self.state.active,self.env.pick[0],self.env.pick[1])
 
+  # Resets the loation of taxi and passenger keeping the goal states same
   def reset(self, restrict=False):
     depots = [depo for depo in self.env.depots if depo!=tuple(self.env.drop)]
     pick = list(random.choice(depots))
@@ -248,6 +254,31 @@ class MDP:
     self.updatePassenger(pick)
     self.updateState(taxi, False)
 
+  def print(self):
+    print("_", end="")
+    for i in range(self.env.n):
+      print("__", end="")
+    print("\n")
+    for i in range(self.env.m-1,-1,-1):
+      print("|", end="")
+      for j in range(self.env.n):
+        if self.env.drop==[j,i]:
+          print("G", end="")
+        elif self.state.location==[j,i]:
+          print("T", end="")
+        elif self.env.pick==[j,i]:
+          print("P", end="")
+        else:
+          print(".", end="")
+        if self.env.grid[(j,i)].walls['East']==True:
+          print("|", end="")
+        else:
+          print(" ", end="")
+      print("\n")
+    print("-", end="")
+    for i in range(self.env.n):
+      print("--", end="")
+    print("\n")
 
   def __str__(self):
     return str(self.__class__) + ": " + str(self.__dict__)
@@ -404,6 +435,7 @@ def simulate(simulator, policy, steps=20):
   for i in range(steps):
     current_state = simulator.getState()
     actionTotake = policy[current_state]
+    # simulator.print()
     print("state: ", current_state, " action prescribed: ", actionTotake)
     if(current_state == simulator.goal_state):
       break
@@ -888,7 +920,7 @@ def partB():
 def partB5():
   grid = problem_layout_partB5()
 
-  # Best algorithm according to our observation: SARSA decay
+  # Best algorithm according to our observation: Qlearning decay
   print("PartB - 5")
   average_reward = 0
   for i in range(5):
